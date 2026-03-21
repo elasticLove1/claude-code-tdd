@@ -36,11 +36,12 @@ claude --dangerously-skip-permissions --system-prompt "$(cat roles/reviewer.md)"
 ## How it works
 
 1. You describe a feature or bug to the **reviewer**
-2. Reviewer writes prompts, shows you the plan, **waits for your OK**
-3. Reviewer launches **tester** → tests written (code doesn't exist yet, tests will fail)
-4. Reviewer launches **coder** → code written to make tests pass
-5. Reviewer verifies boundaries, runs checks, fixes failures **autonomously**
-6. You come back to a ready-to-merge PR
+2. You prepare all the required API keys in .env file
+3. Reviewer writes prompts, shows you the plan, **waits for your OK**
+4. Reviewer launches **tester** → tests written (code doesn't exist yet, tests will fail)
+5. Reviewer launches **coder** → code written to make tests pass
+6. Reviewer verifies boundaries, runs checks, fixes failures **autonomously**
+7. You come back to a ready-to-merge PR
 
 The reviewer splits work into **functional prompts** (need your approval) and **operational prompts** (handles autonomously during a cycle). You approve once, agent does the rest.
 
