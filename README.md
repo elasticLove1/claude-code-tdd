@@ -70,7 +70,7 @@ scripts/
 
 ## Full story
 
-**[How I stopped Claude Code from lying to my face](#)** — 6 things I caught the agent doing, and the system that fixed each one.
+**[How I stopped Claude Code from lying to my face](https://dev.to/elasticlove1/how-i-stopped-claude-code-from-lying-to-my-face-5ani)** — 6 things I caught the agent doing, and the system that fixed each one.
 
 ## License
 
