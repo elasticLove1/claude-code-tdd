@@ -28,20 +28,45 @@ Work is strictly sequential: tests first, then code. **Never commit directly to 
 
 ### Two types of prompts
 
-- **Functional (`func-`)** — in response to ANY owner message (feature, plan step, bug report). Create prompts → show the owner → wait for explicit "yes"/"go ahead" → only then launch agents. **Do NOT launch agents without owner approval.** A bug report from the owner = functional prompt, NOT operational.
+- **Functional (`func-`)** — in response to ANY owner message (feature, plan step, bug report). Create prompts → run through cross-model validation (`scripts/validate-prompts.sh`) → if `APPROVED` show the owner → wait for explicit "yes"/"go ahead" → only then launch agents. **Do NOT launch agents without owner approval.** The validator improves prompt quality but does NOT replace owner approval. A bug report from the owner = functional prompt, NOT operational.
 - **Operational (`op-`)** — ONLY during an already running cycle (test failed after launching coder, regression during acceptance, setup fix after spec change). Launch immediately, without approval. Key difference: the cycle is already running with owner approval.
 
 **How to distinguish:** Ask yourself: "Who initiated this work?" If the owner (message, bug report, feature request) → `func-`. If you yourself during an already approved cycle (test failed, regression, lint error) → `op-`. Same class of bug ≠ same cycle. New owner message = new functional prompt, even if the bug is similar to the current one.
 
+### Cross-model validation
+
+Functional prompts (created per owner request) MUST go through validation via `scripts/validate-prompts.sh` before showing to the owner. Operational prompts (fixes within an already running cycle) are NOT validated — speed matters more.
+
+The validator is a second model (default: OpenAI gpt-5.4). It receives prompts + relevant code + spec.md + **your rules from `reviewer-prompts-tester.md` / `reviewer-prompts-coder.md`** and checks:
+1. Whether the bug diagnosis is correct (if this is a bug fix) — looks at the code and evaluates the hypothesis
+2. Whether the scenario matrix in the tester prompt is complete
+3. Whether there's a conflict between the coder prompt and the tester prompt
+4. Whether the prompts comply with requirements from spec.md
+
+Validation result:
+- `APPROVED` → show prompts to the owner with a note "validation passed", wait for "yes"/"go ahead"
+- `CONCERNS: <description>` → fix prompts based on feedback, re-run validation
+- Maximum 2 attempts. After the second with CONCERNS → show the owner both prompts + validator feedback, wait for their decision
+
+The validator improves prompt quality BEFORE the owner sees them. The owner ALWAYS approves functional prompts.
+
 ### Cycle
 
-1. Read `.claude/roles/reviewer-prompts-tester.md`. Create a prompt for the tester → launch the tester
-2. Read `.claude/roles/reviewer-review-tester.md`. Review the tester's commit (tests will fail — code doesn't exist yet, this is normal)
-3. Read `.claude/roles/reviewer-prompts-coder.md`. Create a prompt for the coder → launch the coder
-4. Read `.claude/roles/reviewer-review-coder.md`. Review the coder's commit → run `npm run lint`, `npm run build`, `npm test`
-5. Tests red → prompt to the CODER. No exceptions (details in `reviewer-review-coder.md` section 5)
-6. Everything green → read `.claude/roles/reviewer-acceptance.md`, perform acceptance
-7. Issues during acceptance → repeat from step 1 or step 3. Re-read the corresponding file before writing a new prompt
+1. Read `.claude/roles/reviewer-prompts-tester.md`. Create a prompt for the tester.
+2. Read `.claude/roles/reviewer-prompts-coder.md`. Create a prompt for the coder.
+3. **Cross-model validation** — run:
+   ```bash
+   scripts/validate-prompts.sh "prompts/tester/<file>.md" "prompts/coder/<file>.md" "<task description>"
+   ```
+   - `APPROVED` → proceed to step 4
+   - `CONCERNS` → fix prompts based on feedback, re-run validation (max 2 attempts)
+   - After 2 failures → proceed to step 4, but show the owner BOTH prompts AND feedback
+4. Show prompts to the owner + validation result → wait for "yes"/"go ahead"
+5. Launch the tester → read `.claude/roles/reviewer-review-tester.md`, review the tester's commit
+6. Launch the coder → read `.claude/roles/reviewer-review-coder.md`, review the coder's commit → `npm run lint`, `npm run build`, `npm test`
+7. Tests red → prompt to the CODER. No exceptions (details in `reviewer-review-coder.md` section 5)
+8. Everything green → read `.claude/roles/reviewer-acceptance.md`, perform acceptance
+9. Issues during acceptance → repeat from step 1 or step 5. Re-read the corresponding file before writing a new prompt. Operational prompts are NOT validated.
 
 ### Brief anchors (details in reviewer-prompts-tester.md / reviewer-prompts-coder.md)
 - Matrix: 7 dimensions (storage, time, config, services, lifecycle, data, states)
@@ -96,4 +121,4 @@ After squash merging a branch into main — NEVER create a PR from the same bran
 Before specifying thresholds, values, or conditions in a prompt — mentally run existing tests with those values. If an existing test would break from the proposed change — adjust the prompt BEFORE sending, not after.
 
 ### Owner request → prompts for review, NOT agent launch
-Any external request (bug report, feature, task) → create prompts → show the owner → wait for approval. Launching agents without "yes" from the owner is FORBIDDEN. You can orchestrate autonomously ONLY AFTER the owner approved the prompts.
+Any external request (bug report, feature, task) → create prompts → run through validation (cycle step 3) → show the owner prompts + validation result → wait for approval. Launching agents without "yes" from the owner is FORBIDDEN. You can orchestrate autonomously ONLY AFTER the owner approved the prompts.
