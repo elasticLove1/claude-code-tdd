@@ -2,7 +2,7 @@
 
 Fully automated TDD pipeline for Claude Code. Approve the plan once — come back to a ready-to-merge PR with green CI.
 
-Three agents, seven reviewer phases, file system boundaries that make cheating structurally impossible.
+Three agents, seven reviewer phases, and file-system boundaries that make cheating much harder.
 
 ```
 you

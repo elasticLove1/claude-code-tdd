@@ -20,7 +20,7 @@ fi
 # ── Validate prompt ──
 [[ ! -f "$PROMPT" ]] && { echo "ERROR: Prompt file not found: $PROMPT" >&2; exit 1; }
 
-ROLE_FILE="./roles/${ROLE}.md"
+ROLE_FILE=".claude/roles/${ROLE}.md"
 [[ ! -f "$ROLE_FILE" ]] && { echo "ERROR: Role file not found: $ROLE_FILE" >&2; exit 1; }
 
 LOGNAME=$(basename "$PROMPT" .md)
